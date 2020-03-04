@@ -20,6 +20,10 @@ with open("config.json") as c:
     with open(hashpath) as h:
         hashes = h.read().splitlines()
 
+def getwords(wlpath):
+    with open(wlpath) as f:
+        wordlist = f.read().splitlines()
+
 def makehash(word, mode):
     word = word.encode("utf-8")
 
@@ -37,20 +41,19 @@ def makehash(word, mode):
 
     return m.hexdigest()
 
-def crackhash(hshlist, wlpath, proclist):
+def crackhash(hshlist, words, proclist):
 
     start = time.time()
     mode = len(hshlist[0])
 
-    with open(wlpath, encoding="utf-8", errors="ignore") as f:
-        for word in f:
-            word = word.rstrip()
+    for word in words:
+        word = word.rstrip()
 
-            curhash = makehash(word, mode)
+        curhash = makehash(word, mode)
 
-            if curhash in hshlist:
-                print(f"{curhash[0:15]}... : {word} ({round(time.time()-start, 2)}s)")
-                hshlist.remove(curhash)
+        if curhash in hshlist:
+            print(f"{curhash[0:15]}... : {word} ({round(time.time()-start, 2)}s)")
+            hshlist.remove(curhash)
     
     if len(hshlist) != 0:
         for hsh in hshlist:
@@ -75,15 +78,20 @@ if __name__ == "__main__":
     with multiprocessing.Manager() as manager:
         px = []
         unsolved_hashes = manager.list()
+        words = manager.list()
+
+        # read wordlist into multiprocess list
+        with open(wlpath) as f:
+            words = f.read().splitlines()
 
         if len(md) != 0:
-            p = multiprocessing.Process(target=crackhash, args=(md, wlpath, unsolved_hashes,))
+            p = multiprocessing.Process(target=crackhash, args=(md, words, unsolved_hashes,))
             px.append(p)
         if len(sh1) != 0:
-            p = multiprocessing.Process(target=crackhash, args=(sh1, wlpath, unsolved_hashes,))
+            p = multiprocessing.Process(target=crackhash, args=(sh1, words, unsolved_hashes,))
             px.append(p)
         if len(sh256) != 0:
-            p = multiprocessing.Process(target=crackhash, args=(sh256, wlpath, unsolved_hashes,))
+            p = multiprocessing.Process(target=crackhash, args=(sh256, words, unsolved_hashes,))
             px.append(p)
         
         for p in px:
